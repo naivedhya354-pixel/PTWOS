@@ -10,7 +10,9 @@ const ne=[...document.querySelectorAll('#app form [name]')];if(ne.length==fv.len
 const vs2=document.getElementById('vs');if(vs2&&vsv!=null&&vs2.options[vsv]){vs2.value=vsv;pv(+vsv,R[1])}scrollTo(0,y)}
 const clean=o=>JSON.parse(JSON.stringify(o)),rd=()=>{clearTimeout(rdT);rdT=setTimeout(rdGo,250)};
 function put(c,o){if(!FB){S[c].push(o);save();return}db.collection(c).add(clean({...o,uid:auth.currentUser.uid,ts:Date.now()})).catch(e=>toast(c+': '+e.code))}
-function setSt(i,v){if(!FB){S.orders[i].st=v;save();return toast('Updated')}db.collection('orders').doc(S.orders[i]._id).update({st:v}).then(()=>toast('Updated')).catch(e=>toast(e.code))}
+function setSt(i,v){const o=S.orders[i],ch=!!opt('stkOrder',o,v);
+if(!FB){o.st=v;if(ch)o.stkDone=v=='Delivered';save();return toast('Updated')}
+const up={st:v};if(ch)up.stkDone=v=='Delivered';db.collection('orders').doc(o._id).update(up).then(()=>toast('Updated')).catch(e=>toast(e.code))}
 function dS(i){if(!confirm('Delete login?'))return;if(!FB){S.staff.splice(i,1);save();return draw()}db.collection('staff').doc(S.staff[i].uid).delete().then(()=>toast('Access removed')).catch(e=>toast(e.code))}
 /* catalog is split: config/meta (small settings) + one document per product / kit / disease (collections: products, kits, diseases) */
 const CC=['products','kits','diseases'],LAST={products:{},kits:{},diseases:{},meta:''},RDY={};let LEG=null;
@@ -31,9 +33,9 @@ async function aS(f){if(!FB)return aS0(f);const id=f.i.value.trim().toLowerCase(
 function rp(i){if(!FB)return rp0(i);toast('Password reset: Firebase Console > Authentication, or delete and recreate this login')}
 function watch(st){const q=c=>{let r=db.collection(c);r=st?(st.role=='super'?r:r.where('branch','==',st.branch)):r.where('uid','==',auth.currentUser.uid);
 subs.push(r.onSnapshot(sn=>{S[c]=sn.docs.map(x=>({...x.data(),_id:x.id})).sort((a,b)=>(a.ts||0)-(b.ts||0));rd()},e=>toast(c+': '+e.code)))};
-['orders','appts','records','diets',...(st&&st.role=='super'?['pl']:[])].forEach(q);
+['orders','appts','records','diets',...(st&&st.role=='super'?['pl']:[]),...(st?['stocklog']:[])].forEach(q);
 if(st&&st.role=='super')subs.push(db.collection('staff').onSnapshot(sn=>{S.staff=sn.docs.map(x=>({...x.data(),uid:x.id}));rd()}))}
-async function onAuth(u){if(regBusy)return;subs.forEach(f=>f());subs=[];['orders','appts','records','diets','pl'].forEach(c=>S[c]=[]);
+async function onAuth(u){if(regBusy)return;subs.forEach(f=>f());subs=[];['orders','appts','records','diets','pl','stocklog'].forEach(c=>S[c]=[]);
 if(!u){S.user=null;S.staffUser=null;return draw()}
 if(catErr){catErr=0;catWatch()}
 try{const st=await db.collection('staff').doc(u.uid).get();
